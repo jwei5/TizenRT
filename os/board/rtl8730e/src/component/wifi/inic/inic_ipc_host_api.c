@@ -323,12 +323,15 @@ static void inic_ipc_print_int_hdl(VOID *Data, u32 IrqStatus, u32 ChanNum)
 	(void) IrqStatus;
 	(void) ChanNum;
 
+	irqstate_t flags;
 	PIPC_MSG_STRUCT ipc_recv_msg = (PIPC_MSG_STRUCT)ipc_get_message(IPC_NP_TO_AP, IPC_N2A_NP_LOG_CHN);
 	char *tmp_buffer = (char *)ipc_recv_msg->msg;
 	DCache_Invalidate((u32)tmp_buffer, ipc_recv_msg->msg_len);
 	
 	/* Print out buffer */
-	lldbg_noarg("%s",tmp_buffer);
+	flags = enter_critical_section();
+	dbg_noarg("%s",tmp_buffer);
+	leave_critical_section(flags);
 
 	/* Indicate logs have been printed */
 	u8 *print_flag = (u8*)ipc_recv_msg->rsvd;
