@@ -401,6 +401,13 @@ wifi_manager_result_e _handler_on_disconnected_state(wifimgr_msg_s *msg)
 		WIFIMGR_CHECK_RESULT(_wifimgr_scan_multi_aps((wifi_manager_scan_multi_configs_s *)msg->param), (TAG, "fail scan\n"), WIFI_MANAGER_FAIL);
 		WIFIMGR_STORE_PREV_STATE;
 		WIFIMGR_SET_STATE(WIFIMGR_SCANNING);
+	/* Temporarily added to handle state when disconnected from AP but softap is still running
+	Should there be another state to represent softap running and AP disconnected? 
+	*/
+	} else if (msg->event == WIFIMGR_CMD_SET_STA) {
+		WIFIMGR_CHECK_RESULT(_wifimgr_stop_softap(), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
+		WIFIMGR_SEND_API_SIGNAL(msg->signal);
+		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 	} else {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_FAIL;
@@ -532,6 +539,11 @@ wifi_manager_result_e _handler_on_connected_state(wifimgr_msg_s *msg)
 	} else if (msg->event == WIFIMGR_CMD_CONNECT) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_ALREADY_CONNECTED;
+	/* Temporarily allow stopping of softap when softap is running in connected state */
+	} else if (msg->event == WIFIMGR_CMD_SET_STA) {
+		WIFIMGR_CHECK_RESULT(_wifimgr_stop_softap(), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
+		WIFIMGR_SEND_API_SIGNAL(msg->signal);
+		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
 	} else {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_FAIL;
@@ -545,6 +557,7 @@ wifi_manager_result_e _handler_on_softap_state(wifimgr_msg_s *msg)
 		WIFIMGR_CHECK_RESULT(_wifimgr_stop_softap(), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
 		WIFIMGR_CHECK_RESULT(_wifimgr_run_sta(), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
 		WIFIMGR_SEND_API_SIGNAL(msg->signal);
+		/* There is an issue here, if STA is currently connected, the state set will be incorrect */
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
 	} else if (msg->event == WIFIMGR_CMD_SCAN) {
 		WIFIMGR_CHECK_RESULT(_wifimgr_scan((wifi_manager_scan_config_s *)msg->param), (TAG, "fail scan\n"), WIFI_MANAGER_FAIL);
@@ -582,6 +595,12 @@ wifi_manager_result_e _handler_on_softap_state(wifimgr_msg_s *msg)
 		wifi_manager_ap_config_s *apinfo = (wifi_manager_ap_config_s *)msg->param;
 		WIFIMGR_CHECK_RESULT(_wifimgr_connect_ap(apinfo), (TAG, "connect ap fail\n"), WIFI_MANAGER_FAIL);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTING);
+	/* Temporarily add state to allow SoftAP to disconnect STA interface from AP */
+	} else if (msg->event == WIFIMGR_CMD_DISCONNECT) {
+		dhcpc_close_ipaddr();
+		WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
+		/* Should this state be SoftAP disconnecting? */
+		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
 	} else {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_FAIL;
