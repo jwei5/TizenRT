@@ -125,6 +125,8 @@ int wifi_connect(rtw_network_info_t *connect_param, unsigned char block)
 
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
 		rtk_reason_t reason;
+		memset(&reason, 0, sizeof(rtk_reason_t));
+		reason.if_id = RTK_WIFI_STATION_IF;
 #endif
 
 	/* check if SoftAP is running */
@@ -207,9 +209,8 @@ int wifi_connect(rtw_network_info_t *connect_param, unsigned char block)
 			}
 
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
-			memset(&reason, 0, sizeof(rtk_reason_t));
+			/* Indicate connected successfully */
 			reason.reason_code = RTK_STATUS_SUCCESS;
-
 			if (g_link_up) {
 				if (reason.reason_code) {
 					nvdbg("reason.reason_code=%d\n", reason.reason_code);
@@ -231,6 +232,14 @@ error:
 	}
 
 	if (rtw_join_status == RTW_JOINSTATUS_FAIL) {
+#if defined(CONFIG_PLATFORM_TIZENRT_OS)
+		/* Indicate failed to join */
+		/* If enter here, reason_code would not have been set to RTK_STATUS_SUCCESS */
+		if (g_link_up) {
+			reason.reason_code = RTK_STATUS_COMMAND_FAILED;
+			g_link_up(&reason);
+		}
+#endif
 		wifi_join_status_indicate(RTW_JOINSTATUS_FAIL);
 	}
 
@@ -341,6 +350,7 @@ static void wifi_ap_sta_assoc_hdl( char* buf, int buf_len, int flags, void* user
 	//USER TODO
 	rtk_reason_t reason;
 	memset(&reason, 0, sizeof(rtk_reason_t));
+	reason.if_id = RTK_WIFI_SOFT_AP_IF;
 	if (strlen(buf) >= 17) {			  // bssid is a 17 character string
 		memcpy(&(reason.bssid), buf, 17); // Exclude null-termination
 	}
@@ -360,6 +370,7 @@ static void wifi_ap_sta_disassoc_hdl( char* buf, int buf_len, int flags, void* u
 	//USER TODO
 	rtk_reason_t reason;
 	memset(&reason, 0, sizeof(rtk_reason_t));
+	reason.if_id = RTK_WIFI_SOFT_AP_IF;
 	if (strlen(buf) >= 17) { // bssid is a 17 character string
 		memcpy(&(reason.bssid), buf, 17);
 	}

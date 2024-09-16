@@ -122,6 +122,12 @@ void wifi_join_status_indicate(rtw_join_status_t join_status)
 	u8 zero_mac[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 #endif
 
+#if defined(CONFIG_PLATFORM_TIZENRT_OS)
+		rtk_reason_t reason;
+		memset(&reason, 0, sizeof(rtk_reason_t));
+		reason.if_id = RTK_WIFI_STATION_IF;
+#endif
+
 	/* step 1: internal process for different status*/
 	if (join_status == RTW_JOINSTATUS_SUCCESS) {
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
@@ -162,9 +168,6 @@ void wifi_join_status_indicate(rtw_join_status_t join_status)
 #endif
 #endif
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
-		rtk_reason_t reason;
-		memset(&reason, 0, sizeof(rtk_reason_t));
-
 		if (g_link_down) {
 			nvdbg("RTK_API %s send link_down\n",__func__);
 			g_link_down(&reason);

@@ -242,6 +242,32 @@ static int _get_ap_security_mode(IN char *ssid, OUT rtw_security_t *security_mod
 	return ret;
 }
 
+extern int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req);
+static int _netlib_setmacaddr(const char *ifname, const uint8_t *macaddr)
+{
+	int ret = ERROR;
+	if (ifname && macaddr) {
+		/* Get a socket (only so that we get access to the INET subsystem) */
+
+		int sockfd = socket(2, NETLIB_SOCK_IOCTL, 0);
+		if (sockfd >= 0) {
+			struct ifreq req;
+
+			/* Put the driver name into the request */
+			strncpy(req.ifr_name, ifname, IFNAMSIZ - 1);
+			req.ifr_name[IFNAMSIZ - 1] = '\0';
+
+			/* Put the new MAC address into the request */
+			req.ifr_hwaddr.sa_family = 2;
+			memcpy(&req.ifr_hwaddr.sa_data, macaddr, 6);
+
+			/* Perform the ioctl to set the MAC address */
+			ret = netdev_ifrioctl(NULL, 1813, &req);
+			close(sockfd);
+		}
+	}
+	return ret;
+}
 
 void dhcpd_event(void)
 {
@@ -305,7 +331,9 @@ int8_t cmd_wifi_ap(trwifi_softap_config_s *softap_config)
 	ip_addr = WIFI_MAKEU32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
 	netmask = WIFI_MAKEU32(NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
 	gw = WIFI_MAKEU32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-	LwIP_SetIP(STA_WLAN_INDEX, ip_addr, netmask, gw);
+	// LwIP_SetIP(STA_WLAN_INDEX, ip_addr, netmask, gw);
+	/* Set to SoftAP Index for Concurrent */
+	LwIP_SetIP(SOFTAP_WLAN_INDEX, ip_addr, netmask, gw);
 #endif
 
 	wifi_stop_ap();
@@ -320,7 +348,13 @@ int8_t cmd_wifi_ap(trwifi_softap_config_s *softap_config)
 	ip_addr = WIFI_MAKEU32(AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
 	netmask = WIFI_MAKEU32(AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
 	gw = WIFI_MAKEU32(AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
-	LwIP_SetIP(STA_WLAN_INDEX, ip_addr, netmask, gw);
+	// LwIP_SetIP(STA_WLAN_INDEX, ip_addr, netmask, gw);
+	/* Set to SoftAP Index for Concurrent */
+	LwIP_SetIP(SOFTAP_WLAN_INDEX, ip_addr, netmask, gw);
+	/* Set MAC for SoftAP */
+	uint8_t *softap_mac = (uint8_t *)LwIP_GetMAC(1);
+	nvdbg("\n\r  MAC => %02x:%02x:%02x:%02x:%02x:%02x", softap_mac[0], softap_mac[1], softap_mac[2], softap_mac[3], softap_mac[4], softap_mac[5]);
+	_netlib_setmacaddr(CONFIG_WIFIMGR_SOFTAP_IFNAME, softap_mac);
 	dhcps_start(pnetif);
 #endif
 
@@ -559,11 +593,6 @@ int8_t cmd_wifi_disconnect(void)
 
 	nvdbg("\n\rDeassociating AP ...");
 
-	if (curr_join_status == RTW_JOINSTATUS_DISCONNECT) {
-		nvdbg("\n\rWIFI disconnected");
-		return 0;
-	}
-
 	if (wifi_disconnect() < 0) {
 		ndbg("\n\rERROR: Operation failed!");
 		return -1;
@@ -677,42 +706,9 @@ void cmd_wifi_info(int argc, char **argv)
 #endif
 }
 
-extern int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req);
-static int _netlib_setmacaddr(const char *ifname, const uint8_t *macaddr)
-{
-	int ret = ERROR;
-	if (ifname && macaddr) {
-		/* Get a socket (only so that we get access to the INET subsystem) */
-
-		int sockfd = socket(2, NETLIB_SOCK_IOCTL, 0);
-		if (sockfd >= 0) {
-			struct ifreq req;
-
-			/* Put the driver name into the request */
-			strncpy(req.ifr_name, ifname, IFNAMSIZ - 1);
-			req.ifr_name[IFNAMSIZ - 1] = '\0';
-
-			/* Put the new MAC address into the request */
-			req.ifr_hwaddr.sa_family = 2;
-			memcpy(&req.ifr_hwaddr.sa_data, macaddr, 6);
-
-			/* Perform the ioctl to set the MAC address */
-			ret = netdev_ifrioctl(NULL, 1813, &req);
-			close(sockfd);
-		}
-	}
-	return ret;
-}
-
 int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
-{	if (interface_id>1){
-		lldbg("start concurrent");
-		wifi_on(3);
-		nvdbg("\r\n===============>>Finish wifi_on for concurrent!!\r\n");
-	return RTK_STATUS_SUCCESS;
-	}
+{	
 
-	lldbg("start sta");
 	wifi_on(RTW_MODE_STA);
 
 	rtw_wifi_setting_t setting;
