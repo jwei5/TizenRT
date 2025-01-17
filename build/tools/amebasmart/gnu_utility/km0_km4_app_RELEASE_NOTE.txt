@@ -1,5 +1,9 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 17c0d60e2a 2025/01/17-18:23:05 ==
+1. Change CSI trig_period from u8 to u16 to support longer trig period
+2. Add PM support for CSI
+
 == version e50d597d68 2025/01/16-14:49:03 ==
 1. Fix issue of SoftAP not transmitting beacons when started after PM wake
 
