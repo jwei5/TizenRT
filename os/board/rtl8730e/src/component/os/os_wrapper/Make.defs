@@ -49,12 +49,14 @@
 #
 ############################################################################
 
-CSRCS += inic_ipc_host.c \
-	 inic_ipc_host_trx.c \
-	 inic_ipc_host_api.c \
-	 inic_ipc_host_api_basic.c \
-	 inic_ipc_host_api_ext.c \
-	 inic_ipc_msg_queue.c
+CSRCS += os_wrapper_critical.c \
+	 os_wrapper_memory.c \
+	 os_wrapper_mutex.c \
+	 os_wrapper_queue.c \
+	 os_wrapper_semaphore.c \
+	 os_wrapper_task.c \
+	 os_wrapper_time.c \
+	 os_wrapper_timer.c
 
-DEPPATH += --dep-path component/wifi/inic
-VPATH += :component/wifi/inic
+DEPPATH += --dep-path component/os/os_wrapper
+VPATH += :component/os/os_wrapper
