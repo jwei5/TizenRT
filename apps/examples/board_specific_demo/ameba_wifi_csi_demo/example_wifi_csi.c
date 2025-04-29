@@ -61,9 +61,9 @@ int wificsi_main(int argc, char *argv[])
 	unsigned int csi_seq_num;
 	unsigned int timestamp;
 	/* Set the mac addr of each device */
-	unsigned char device_1[6] = {0x1c, 0x3b, 0xf3, 0xea, 0x9d, 0xc3};  /* need modify to mac address of associated AP when sta mode */
-	unsigned char device_2[6] = {0xba, 0xbc, 0xb7, 0xae, 0xd9, 0x8f};  /* need modify to mac address of associated AP when sta mode */
-	unsigned char device_3[6] = {0x00, 0xe0, 0x4c, 0x00, 0x0e, 0xc8};  /* need modify to mac address of associated AP when sta mode */
+	unsigned char device_0[6] = {0x1c, 0x3b, 0xf3, 0xea, 0x9d, 0xc3};  /* need modify to mac address of associated AP when sta mode */
+	unsigned char device_1[6] = {0xba, 0xbc, 0xb7, 0xae, 0xd9, 0x8f};  /* need modify to mac address of associated AP when sta mode */
+	unsigned char device_2[6] = {0x00, 0xe0, 0x4c, 0x00, 0x0e, 0xc8};  /* need modify to mac address of associated AP when sta mode */
 	act_param.group_num = 0;
 	act_param.mode = 2;  /* 0: rx normal 2:rx respon */
 	act_param.accuracy = 0;
@@ -73,8 +73,8 @@ int wificsi_main(int argc, char *argv[])
 	act_param.trig_frame_mgnt = 0;   /* no need for rx resp mode, default 0*/
 	act_param.trig_frame_ctrl = 0;   /* no need for rx resp mode, default 0*/
 	act_param.trig_frame_data = 0;   /* no need for rx resp mode, default 0*/
-	/* Config mac addr for device 1 */
-	memcpy(act_param.mac_addr, device_1, 6);
+	/* Config mac addr for device_0 */
+	memcpy(act_param.mac_addr, device_0, 6);
 	char ipv4_address[4];
 	char ipv4_buf[16];
 	while (1) {
@@ -102,20 +102,20 @@ int wificsi_main(int argc, char *argv[])
 	act_param.enable = 0;
 	wifi_csi_config(&act_param);
 
-	/* Enable CSI for device 1 */
-	act_param.trig_flag = 1;
+	/* Enable CSI for device_0 */
+	act_param.trig_flag = 0;
 	act_param.act = 0;  /* csi en */
 	act_param.enable = 1;
 	wifi_csi_config(&act_param);
 
-	/* Enable CSI for device 2 */
-	act_param.trig_flag = 2;
-	memcpy(act_param.mac_addr, device_2, 6);
+	/* Enable CSI for device_1 */
+	act_param.trig_flag = 1;
+	memcpy(act_param.mac_addr, device_1, 6);
 	wifi_csi_config(&act_param);
 
-	/* Enable CSI for device 3 */
-	act_param.trig_flag = 3;
-	memcpy(act_param.mac_addr, device_3, 6);
+	/* Enable CSI for device_2 */
+	act_param.trig_flag = 2;
+	memcpy(act_param.mac_addr, device_2, 6);
 	wifi_csi_config(&act_param);
 	csi_buf = (unsigned char *)malloc(csi_data_len);
 	if (csi_buf) {
