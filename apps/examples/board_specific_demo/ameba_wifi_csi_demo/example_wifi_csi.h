@@ -144,6 +144,28 @@ typedef struct _rtw_csi_action_parm_t {
 	unsigned char multi_type;     /* 0-uc csi triggering frame; 1-bc csi triggering frame */
 	unsigned char trig_flag;      /* indicate source of device for triggering csi[sta<->sta]: 4bits >> 1 ~ 15 */
 } rtw_csi_action_parm_t;
+
+/**
+  * @brief  The structure is used to store the WIFI setting gotten from WIFI driver.
+  * @note	size can't be changed
+  */
+struct _rtw_wifi_setting_t {
+	//enum rtw_mode_type			mode;   /**< the mode of current wlan interface */
+	unsigned char 		mode;
+	unsigned char 		ssid[33];   /**< the ssid of connected AP or softAP */
+	unsigned char		bssid[6];   /**< the bssid of connected AP or softAP */
+	unsigned char		channel;
+	//enum rtw_security		security_type;   /**< the security type of connected AP or softAP */
+	int 				security_type;
+	//unsigned char 		password[RTW_MAX_PSK_LEN];   /**< the password of connected AP or softAP */
+	unsigned char 		password[128];
+	unsigned char		key_idx;
+	unsigned char		iw_mode;	/**< RTK_IW_MODE */
+	unsigned char		alg;		/**< encryption algorithm */
+	unsigned int		auth_type;
+	unsigned char		is_wps_trigger;	/**< connection triggered by WPS process**/
+	unsigned int		rom_rsvd;
+};
 #else
 #define WIFI_CSI_DONE 21
 

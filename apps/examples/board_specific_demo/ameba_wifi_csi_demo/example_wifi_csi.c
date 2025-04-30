@@ -40,6 +40,8 @@ static sem_t wc_ready_sema;
 
 static unsigned int csi_data_len = 2048;
 
+extern int wifi_get_setting(unsigned char wlan_idx, struct _rtw_wifi_setting_t *psetting);
+
 /* wifi csi report callback */
 void example_wifi_csi_report_cb(char *buf, int buf_len, int flags, void *userdata)
 {
@@ -60,8 +62,9 @@ int wificsi_main(int argc, char *argv[])
 	unsigned long long *buff_tmp = NULL; /* to printf csi data*/
 	unsigned int csi_seq_num;
 	unsigned int timestamp;
+	struct _rtw_wifi_setting_t wlan_setting = {0};
+	unsigned char device_0[6] = {0};  /* get mac_addr of AP via wifi_get_setting */
 	/* Set the mac addr of each device */
-	unsigned char device_0[6] = {0x1c, 0x3b, 0xf3, 0xea, 0x9d, 0xc3};  /* need modify to mac address of associated AP when sta mode */
 	unsigned char device_1[6] = {0xba, 0xbc, 0xb7, 0xae, 0xd9, 0x8f};  /* need modify to mac address of associated AP when sta mode */
 	unsigned char device_2[6] = {0x00, 0xe0, 0x4c, 0x00, 0x0e, 0xc8};  /* need modify to mac address of associated AP when sta mode */
 	act_param.group_num = 0;
@@ -73,8 +76,6 @@ int wificsi_main(int argc, char *argv[])
 	act_param.trig_frame_mgnt = 0;   /* no need for rx resp mode, default 0*/
 	act_param.trig_frame_ctrl = 0;   /* no need for rx resp mode, default 0*/
 	act_param.trig_frame_data = 0;   /* no need for rx resp mode, default 0*/
-	/* Config mac addr for device_0 */
-	memcpy(act_param.mac_addr, device_0, 6);
 	char ipv4_address[4];
 	char ipv4_buf[16];
 	while (1) {
@@ -82,11 +83,17 @@ int wificsi_main(int argc, char *argv[])
 			snprintf(ipv4_buf, 16, "%d.%d.%d.%d", ipv4_address[0], ipv4_address[1], ipv4_address[2], ipv4_address[3]);
 		}
 		if (wifi_is_running(WLAN0_IDX) && ((wifi_get_join_status()) && (strncmp(ipv4_buf, IP_ADDR_INVALID, sizeof(ipv4_buf))))) {
+			/* get mac_addr of connected ap */
+			wifi_get_setting(WLAN0_IDX, &wlan_setting);
+			memcpy(device_0, wlan_setting.bssid, 6);
 			sleep(2); /* 2s */
 			break;
 		}
 		sleep(2); /* 2s */
 	}
+
+	memcpy(act_param.mac_addr, device_0, 6);
+
 	/**
 	 * should use semaphore to wait wifi event happen
 	 * the following example shows that we wait for wifi csi ready
